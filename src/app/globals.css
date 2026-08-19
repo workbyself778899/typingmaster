@@ -1,26 +1,313 @@
-@import "tailwindcss";
+/* ===== Design Tokens ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Preeti';
+  src: url('/fonts/Preeti.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutral palette */
+  --background: 0 0% 99%;
+  --foreground: 220 15% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 15% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 15% 12%;
+
+  /* Primary - Deep indigo */
+  --primary: 234 89% 56%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary - Soft slate */
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 15% 20%;
+
+  /* Muted */
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+
+  /* Accent */
+  --accent: 220 14% 96%;
+  --accent-foreground: 220 15% 20%;
+
+  /* Destructive */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Success */
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning */
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  /* Info */
+  --info: 199 89% 48%;
+  --info-foreground: 0 0% 100%;
+
+  /* Borders */
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 234 89% 56%;
+
+  /* Chart colors */
+  --chart-1: 234 89% 56%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 199 89% 48%;
+  --chart-5: 0 84% 60%;
+
+  /* Radius */
+  --radius: 0.625rem;
+
+  /* Typing-specific */
+  --typing-correct: 142 71% 45%;
+  --typing-incorrect: 0 84% 60%;
+  --typing-current: 234 89% 56%;
+  --typing-upcoming: 220 9% 46%;
+  --typing-bg: 220 14% 96%;
+  --keyboard-key: 0 0% 100%;
+  --keyboard-key-active: 234 89% 56%;
+  --keyboard-key-correct: 142 71% 45%;
+  --keyboard-key-incorrect: 0 84% 60%;
+  --keyboard-border: 220 13% 85%;
+
+  /* Finger colors */
+  --finger-pinky: 280 67% 60%;
+  --finger-ring: 199 89% 48%;
+  --finger-middle: 142 71% 45%;
+  --finger-index: 38 92% 50%;
+  --finger-thumb: 220 9% 46%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 47% 8%;
+  --popover-foreground: 210 40% 96%;
+
+  --primary: 234 89% 64%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 217 33% 14%;
+  --secondary-foreground: 210 40% 96%;
+
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 55%;
+
+  --accent: 217 33% 14%;
+  --accent-foreground: 210 40% 96%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 71% 40%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 38 92% 45%;
+  --warning-foreground: 0 0% 100%;
+
+  --info: 199 89% 42%;
+  --info-foreground: 0 0% 100%;
+
+  --border: 217 33% 18%;
+  --input: 217 33% 18%;
+  --ring: 234 89% 64%;
+
+  --chart-1: 234 89% 64%;
+  --chart-2: 142 71% 40%;
+  --chart-3: 38 92% 45%;
+  --chart-4: 199 89% 42%;
+  --chart-5: 0 72% 51%;
+
+  --typing-correct: 142 71% 40%;
+  --typing-incorrect: 0 72% 51%;
+  --typing-current: 234 89% 64%;
+  --typing-upcoming: 215 20% 55%;
+  --typing-bg: 217 33% 12%;
+  --keyboard-key: 217 33% 14%;
+  --keyboard-key-active: 234 89% 64%;
+  --keyboard-key-correct: 142 71% 40%;
+  --keyboard-key-incorrect: 0 72% 51%;
+  --keyboard-border: 217 33% 22%;
+
+  --finger-pinky: 280 67% 55%;
+  --finger-ring: 199 89% 42%;
+  --finger-middle: 142 71% 40%;
+  --finger-index: 38 92% 45%;
+  --finger-thumb: 215 20% 55%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===== Base Styles ===== */
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ===== Focus Styles ===== */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ===== Selection ===== */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+/* ===== Typing Area ===== */
+.typing-char {
+  display: inline;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 1.25rem;
+  line-height: 2;
+  letter-spacing: 0.02em;
+  transition: color 0.1s ease, background-color 0.1s ease;
+}
+
+.typing-char-correct {
+  color: hsl(var(--typing-correct));
+}
+
+.typing-char-incorrect {
+  color: hsl(var(--typing-incorrect));
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--typing-incorrect));
+}
+
+.typing-char-current {
+  background: hsl(var(--typing-current) / 0.15);
+  border-bottom: 2px solid hsl(var(--typing-current));
+}
+
+.typing-char-upcoming {
+  color: hsl(var(--typing-upcoming));
+}
+
+/* ===== Keyboard ===== */
+.keyboard-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--keyboard-key));
+  border: 1px solid hsl(var(--keyboard-border));
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.1s ease;
+  user-select: none;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.25rem;
+}
+
+.keyboard-key-active {
+  background: hsl(var(--keyboard-key-active));
+  color: white;
+  transform: scale(0.95);
+  box-shadow: 0 0 0 2px hsl(var(--keyboard-key-active) / 0.3);
+}
+
+.keyboard-key-correct {
+  background: hsl(var(--keyboard-key-correct));
+  color: white;
+}
+
+.keyboard-key-incorrect {
+  background: hsl(var(--keyboard-key-incorrect));
+  color: white;
+}
+
+/* Finger color classes */
+.finger-pinky { background: hsl(var(--finger-pinky) / 0.15); border-color: hsl(var(--finger-pinky) / 0.3); }
+.finger-ring { background: hsl(var(--finger-ring) / 0.15); border-color: hsl(var(--finger-ring) / 0.3); }
+.finger-middle { background: hsl(var(--finger-middle) / 0.15); border-color: hsl(var(--finger-middle) / 0.3); }
+.finger-index { background: hsl(var(--finger-index) / 0.15); border-color: hsl(var(--finger-index) / 0.3); }
+.finger-thumb { background: hsl(var(--finger-thumb) / 0.15); border-color: hsl(var(--finger-thumb) / 0.3); }
+
+/* ===== Animations ===== */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-cursor-blink {
+  animation: cursor-blink 1s ease-in-out infinite;
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
