@@ -117,9 +117,13 @@ export type TextDifficulty = 'beginner' | 'easy' | 'medium' | 'hard' | 'expert';
 export type TextType = 'words' | 'sentences' | 'paragraphs' | 'home-row';
 
 /**
- * Generate random words based on difficulty level.
+ * Generate random words based on difficulty level with optional numbers and punctuation.
  */
-export function generateRandomWords(count: number, difficulty: TextDifficulty = 'medium'): string {
+export function generateRandomWords(
+  count: number,
+  difficulty: TextDifficulty = 'medium',
+  options?: { includeNumbers?: boolean; includePunctuation?: boolean }
+): string {
   let wordPool: string[];
 
   switch (difficulty) {
@@ -142,11 +146,40 @@ export function generateRandomWords(count: number, difficulty: TextDifficulty = 
       wordPool = [...commonWords, ...intermediateWords];
   }
 
+  const numberPool = ['1', '2', '5', '10', '20', '50', '100', '2026', '7', '12', '99', '365', '45', '80'];
+  const punctuationMarks = ['.', ',', '?', '!', ';'];
+
   const result: string[] = [];
   const shuffled = shuffle(wordPool);
+
   for (let i = 0; i < count; i++) {
-    result.push(shuffled[i % shuffled.length]);
+    let word = shuffled[i % shuffled.length];
+
+    // Inject numbers every ~6 words if includeNumbers is true
+    if (options?.includeNumbers && i % 6 === 2) {
+      word = numberPool[Math.floor(Math.random() * numberPool.length)];
+    }
+
+    // Inject punctuation every ~5 words if includePunctuation is true
+    if (options?.includePunctuation && i % 5 === 4) {
+      const p = punctuationMarks[Math.floor(Math.random() * punctuationMarks.length)];
+      word = `${word}${p}`;
+    }
+
+    result.push(word);
   }
+
+  // Capitalize sentence starts if punctuation is enabled
+  if (options?.includePunctuation && result.length > 0) {
+    result[0] = result[0].charAt(0).toUpperCase() + result[0].slice(1);
+    for (let i = 1; i < result.length; i++) {
+      const prev = result[i - 1];
+      if (prev.endsWith('.') || prev.endsWith('?') || prev.endsWith('!')) {
+        result[i] = result[i].charAt(0).toUpperCase() + result[i].slice(1);
+      }
+    }
+  }
+
   return result.join(' ');
 }
 
@@ -166,34 +199,36 @@ export function generateParagraph(): string {
 }
 
 /**
- * Generate text based on type and difficulty.
- * Returns enough text for the specified duration (approximate).
+ * Generate text based on type, difficulty, numbers, and punctuation.
  */
 export function generateText(options: {
   type?: TextType;
   difficulty?: TextDifficulty;
   duration?: number; // seconds
   wordCount?: number;
+  includeNumbers?: boolean;
+  includePunctuation?: boolean;
 }): string {
   const {
     type = 'words',
     difficulty = 'medium',
     duration = 60,
     wordCount,
+    includeNumbers = false,
+    includePunctuation = false,
   } = options;
 
-  // Estimate ~40 WPM average, generate enough words for the duration
-  const estimatedWords = wordCount || Math.ceil((duration / 60) * 60); // a bit more than needed
+  const estimatedWords = wordCount || Math.ceil((duration / 60) * 70);
 
   switch (type) {
     case 'home-row':
-      return generateRandomWords(estimatedWords, 'beginner');
+      return generateRandomWords(estimatedWords, 'beginner', { includeNumbers, includePunctuation });
     case 'sentences':
       return generateSentences(Math.ceil(estimatedWords / 10));
     case 'paragraphs':
       return generateParagraph();
     case 'words':
     default:
-      return generateRandomWords(estimatedWords, difficulty);
+      return generateRandomWords(estimatedWords, difficulty, { includeNumbers, includePunctuation });
   }
 }

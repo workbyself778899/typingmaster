@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest) {
       const pwResult = changePasswordSchema.safeParse(body);
       if (!pwResult.success) {
         return NextResponse.json(
-          { success: false, error: pwResult.error.errors[0].message },
+          { success: false, error: pwResult.error.issues[0].message },
           { status: 400 }
         );
       }
@@ -93,7 +93,7 @@ export async function PUT(request: NextRequest) {
     const result = updateProfileSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error.errors[0].message },
+        { success: false, error: result.error.issues[0].message },
         { status: 400 }
       );
     }

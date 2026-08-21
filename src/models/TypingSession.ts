@@ -8,7 +8,7 @@ export interface IKeystrokeData {
   latency: number;
 }
 
-export interface ITypingSession extends Document {
+export interface ITypingSession extends Omit<Document, 'errors'> {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   language: string;

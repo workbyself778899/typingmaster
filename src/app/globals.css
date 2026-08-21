@@ -10,6 +10,10 @@
   font-display: swap;
 }
 
+.font-preeti {
+  font-family: 'Preeti', sans-serif !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -198,27 +202,45 @@ body {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 1.25rem;
   line-height: 2;
-  letter-spacing: 0.02em;
+  letter-spacing: normal;
   transition: color 0.1s ease, background-color 0.1s ease;
 }
 
+.typing-char-upcoming {
+  color: #64748b;
+  opacity: 0.85;
+}
+
 .typing-char-correct {
-  color: hsl(var(--typing-correct));
+  color: #10b981;
 }
 
 .typing-char-incorrect {
-  color: hsl(var(--typing-incorrect));
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.15);
   text-decoration: underline;
-  text-decoration-color: hsl(var(--typing-incorrect));
+  text-decoration-color: #ef4444;
+  border-radius: 2px;
 }
 
 .typing-char-current {
-  background: hsl(var(--typing-current) / 0.15);
-  border-bottom: 2px solid hsl(var(--typing-current));
+  background: rgba(99, 102, 241, 0.15);
+  border-bottom: 2px solid #6366f1;
 }
 
-.typing-char-upcoming {
-  color: hsl(var(--typing-upcoming));
+.dark .typing-char-upcoming {
+  color: #94a3b8;
+  opacity: 0.85;
+}
+
+.dark .typing-char-correct {
+  color: #34d399;
+}
+
+.dark .typing-char-incorrect {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.2);
+  text-decoration-color: #f87171;
 }
 
 /* ===== Keyboard ===== */

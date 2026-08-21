@@ -88,9 +88,9 @@ export function useTypingEngine(
   }, [state.isComplete, state.startTime]);
 
   // Calculate live stats
-  const minutes = elapsedSeconds / 60 || 1 / 60; // avoid /0
-  const grossWpm = Math.round((state.correctChars + state.incorrectChars) / WORD_LENGTH / minutes);
-  const netWpm = Math.max(0, Math.round((state.correctChars / WORD_LENGTH - state.errors) / minutes));
+  const minutes = Math.max(1 / 60, elapsedSeconds / 60); // avoid /0
+  const grossWpm = Math.round((state.totalKeystrokes / WORD_LENGTH) / minutes);
+  const netWpm = Math.max(0, Math.round((state.correctChars / WORD_LENGTH) / minutes));
   const totalTyped = state.correctChars + state.incorrectChars;
   const accuracy = totalTyped > 0 ? Math.round((state.correctChars / totalTyped) * 10000) / 100 : 100;
   const progress = state.text.length > 0 ? Math.round((state.currentIndex / state.text.length) * 100) : 0;
@@ -117,14 +117,20 @@ export function useTypingEngine(
         if (e.key === 'Backspace') {
           if (prev.currentIndex <= 0) return { ...prev, isStarted, startTime };
           const newIndex = prev.currentIndex - 1;
+          const prevCharTyped = prev.typed[newIndex];
           const newTyped = [...prev.typed];
           newTyped[newIndex] = null;
+
+          const wasCorrect = prevCharTyped !== null && prevCharTyped === prev.text[newIndex];
+
           return {
             ...prev,
             isStarted,
             startTime,
             currentIndex: newIndex,
             typed: newTyped,
+            correctChars: Math.max(0, prev.correctChars - (wasCorrect ? 1 : 0)),
+            incorrectChars: Math.max(0, prev.incorrectChars - (wasCorrect ? 0 : 1)),
             backspaces: prev.backspaces + 1,
             totalKeystrokes: prev.totalKeystrokes + 1,
           };
@@ -226,8 +232,9 @@ function buildResult(state: TypingEngineState, keystrokes: KeystrokeData[]): Typ
   const minutes = durationSec / 60 || 1 / 60;
 
   const totalChars = state.correctChars + state.incorrectChars;
-  const grossWpm = Math.round(totalChars / WORD_LENGTH / minutes);
-  const netWpm = Math.max(0, Math.round((state.correctChars / WORD_LENGTH - state.errors) / minutes));
+  const totalKeystrokes = state.totalKeystrokes || totalChars;
+  const grossWpm = Math.round((totalKeystrokes / WORD_LENGTH) / minutes);
+  const netWpm = Math.max(0, Math.round((state.correctChars / WORD_LENGTH) / minutes));
   const accuracy = totalChars > 0 ? Math.round((state.correctChars / totalChars) * 10000) / 100 : 100;
   const errorRate = totalChars > 0 ? Math.round((state.errors / totalChars) * 10000) / 100 : 0;
 

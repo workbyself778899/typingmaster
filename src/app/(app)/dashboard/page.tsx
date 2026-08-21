@@ -19,8 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/use-auth';
-import { formatDuration, formatDate } from '@/lib/utils';
-import { xpForLevel } from '@/lib/auth/auth';
+import { formatDuration, formatDate, xpForLevel } from '@/lib/utils';
 import {
   LineChart,
   Line,

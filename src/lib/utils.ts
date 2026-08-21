@@ -65,3 +65,29 @@ export function slugify(text: string): string {
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
+
+// ===== XP & Level Helpers =====
+
+export function xpForLevel(level: number): number {
+  return 50 * level;
+}
+
+export function calculateLevel(xp: number): number {
+  let level = 1;
+  let totalXp = 0;
+  while (totalXp + xpForLevel(level + 1) <= xp) {
+    totalXp += xpForLevel(level + 1);
+    level++;
+  }
+  return level;
+}
+
+export function xpToNextLevel(currentXp: number, currentLevel: number): number {
+  let totalXpForCurrentLevel = 0;
+  for (let i = 1; i <= currentLevel; i++) {
+    totalXpForCurrentLevel += xpForLevel(i);
+  }
+  const xpNeededForNext = xpForLevel(currentLevel + 1);
+  const xpIntoCurrentLevel = currentXp - totalXpForCurrentLevel;
+  return xpNeededForNext - xpIntoCurrentLevel;
+}

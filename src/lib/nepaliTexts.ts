@@ -38,6 +38,22 @@ export const nepaliTexts: NepaliTextPair[] = [
   {
     unicode: "हाम्रो सुन्दर देश नेपाल शान्त र शान्तिप्रिय छ ।",
     preeti: "xfd|f] ;'Gb/ b]z g]kfn zfGt / zfGtlk|o 5 ."
+  },
+  {
+    unicode: "ज्ञान नै शक्ति हो निरन्तर सिक्ने बानी बसालौँ ।",
+    preeti: "Uofg g} zlSt xf] lg/Gt/ l;Sg] afgL a;fnf}+ ."
+  },
+  {
+    unicode: "शिक्षाले मानिसलाई असल र ज्ञानी बनाउँछ ।",
+    preeti: "lzIffn] dflg;nf head c;n / UofgL agfpF5 ."
+  },
+  {
+    unicode: "मेहनतको फल सधैँ मिठो हुन्छ ।",
+    preeti: "d]xgtsf] fn ;w}F ld7f] x'G5 ."
+  },
+  {
+    unicode: "प्रकृति हाम्रो अमूल्य सम्पत्ति हो यसको संरक्षण गरौँ ।",
+    preeti: "k|s[lt xfd|f] cd'No ;DklQ xf] o;sf] ;+/Ifg u/f}+ ."
   }
 ];
 
