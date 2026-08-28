@@ -190,6 +190,10 @@ export default function TypingPage() {
   const [difficulty, setDifficulty] = useState<TextDifficulty>('medium');
   const [includeNumbers, setIncludeNumbers] = useState<boolean>(false);
   const [includePunctuation, setIncludePunctuation] = useState<boolean>(false);
+  const [hideCompletedLines, setHideCompletedLines] = useState<boolean>(true);
+  const [lineOffsetY, setLineOffsetY] = useState<number>(0);
+
+
   
   // Test typing state
   const [targetText, setTargetText] = useState('');
@@ -220,6 +224,8 @@ export default function TypingPage() {
   const keystrokesRef = useRef<{ char: string; expected: string; timestamp: number; isCorrect: boolean; latency: number }[]>([]);
   const typedTextRef = useRef<string>('');
   const startTimeRef = useRef<number | null>(null);
+  const handleTestCompleteRef = useRef<(finalValue?: string) => void>(() => {});
+  const isCompleteRef = useRef<boolean>(false);
 
   // Sync ref with typedText state
   useEffect(() => {
@@ -266,8 +272,9 @@ export default function TypingPage() {
       timerRef.current = setInterval(() => {
         setElapsedSeconds((prev) => {
           const next = prev + 1;
-          if (next >= duration) {
-            handleTestComplete();
+          if (next >= duration && !isCompleteRef.current) {
+            // Use setTimeout to avoid calling setState from within another setState updater
+            setTimeout(() => handleTestCompleteRef.current(), 0);
           }
           return next;
         });
@@ -289,34 +296,29 @@ export default function TypingPage() {
     focusInput();
   }, [targetText]);
 
-  // Auto-scroll handler (Keep active line visible without premature upside jumps)
+  // Fast Line-Sliding Handler (Slides completed line up on line change, slides back down on backspace)
   useEffect(() => {
     if (!textDisplayRef.current || isComplete) return;
 
-    const activeWordEl = textDisplayRef.current.querySelector('.typing-word-active') as HTMLElement;
+    const container = textDisplayRef.current;
+    const activeWordEl = container.querySelector('.typing-word-active') as HTMLElement;
     if (!activeWordEl) return;
 
-    const container = textDisplayRef.current;
     const wordTop = activeWordEl.offsetTop;
 
-    // Line 1 threshold check (offsetTop < 35px): lock scroll to top 0
-    if (wordTop < 35) {
-      if (container.scrollTop !== 0) {
-        container.scrollTop = 0;
+    // Detect first line top (~6px to 12px)
+    if (wordTop <= 24) {
+      if (lineOffsetY !== 0) setLineOffsetY(0);
+    } else {
+      // Calculate target line offset (line step ~38px)
+      const lineStep = 38;
+      const lineIndex = Math.floor((wordTop - 8) / lineStep);
+      const targetOffset = Math.max(0, lineIndex * lineStep);
+      if (lineOffsetY !== targetOffset) {
+        setLineOffsetY(targetOffset);
       }
-      lastLineTopRef.current = 0;
-      return;
     }
-
-    // Only scroll when transitioning to a new line (offsetTop changes by > 20px)
-    if (Math.abs(wordTop - lastLineTopRef.current) > 20) {
-      lastLineTopRef.current = wordTop;
-      container.scrollTo({
-        top: Math.max(0, wordTop - 10),
-        behavior: 'smooth',
-      });
-    }
-  }, [typedText, isComplete]);
+  }, [typedText, isComplete, lineOffsetY]);
 
   // Handle mapped key typing values
   const handleNewTypedValue = (value: string) => {
@@ -476,9 +478,10 @@ export default function TypingPage() {
 
   // Complete test
   const handleTestComplete = (finalValue?: string) => {
+    if (isCompleteRef.current) return; // Prevent double-completion
     if (timerRef.current) clearInterval(timerRef.current);
     setIsComplete(true);
-    
+    isCompleteRef.current = true;
     const value = finalValue !== undefined ? finalValue : typedTextRef.current;
     const endTime = Date.now();
     const start = startTimeRef.current || startTime || endTime;
@@ -566,16 +569,21 @@ export default function TypingPage() {
     setShowResult(true);
   };
 
+  // Keep ref in sync so the timer always calls the latest handleTestComplete
+  handleTestCompleteRef.current = handleTestComplete;
+
   // Reset test state
   const handleNewTest = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
     setBackspaceCount(0);
+    setLineOffsetY(0);
     setTypedText('');
     typedTextRef.current = '';
     setResult(null);
@@ -605,6 +613,7 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
@@ -622,6 +631,7 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
@@ -639,6 +649,7 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
@@ -656,6 +667,7 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
@@ -673,6 +685,7 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setIsStarted(false);
     setIsComplete(false);
+    isCompleteRef.current = false;
     setStartTime(null);
     startTimeRef.current = null;
     setElapsedSeconds(0);
@@ -770,7 +783,7 @@ export default function TypingPage() {
 
   const expectedKey = getExpectedKey();
 
-  // Rendering clean target prompt text without green/red colors
+  // Rendering target prompt text with GREEN for correct and RED for wrong text
   const renderTextContent = () => {
     if (!targetText) return null;
 
@@ -786,8 +799,21 @@ export default function TypingPage() {
       // Handle space tokens
       if (/^\s+$/.test(word)) {
         const isCurrentSpace = typedText.length >= wordStart && typedText.length < wordEnd;
+        const isPastSpace = typedText.length >= wordEnd;
+        const typedChar = typedText[wordStart];
+        const isCorrectSpace = isPastSpace && (typedChar === word || typedChar === ' ');
+
         return (
-          <span key={wordIndex} className="relative inline">
+          <span
+            key={wordIndex}
+            className={`typing-word relative inline ${
+              isPastSpace
+                ? isCorrectSpace
+                  ? 'text-emerald-500/80 font-semibold'
+                  : 'bg-red-500/20 text-red-500 font-semibold rounded-xs'
+                : ''
+            }`}
+          >
             {isCurrentSpace && (
               <span
                 className="absolute left-0 bg-[hsl(var(--primary))] animate-pulse rounded-full"
@@ -799,171 +825,80 @@ export default function TypingPage() {
         );
       }
 
-      // 1. Untyped word (upcoming)
-      if (typedText.length <= wordStart) {
+      // Check trailing space after word
+      const hasTrailingSpace = targetText[wordEnd] === ' ' || targetText[wordEnd] === '\t' || targetText[wordEnd] === '\n';
+      const completeBoundary = hasTrailingSpace ? wordEnd + 1 : wordEnd;
+
+      // 1. Active word (currently typing)
+      if (typedText.length >= wordStart && typedText.length < completeBoundary) {
+        const typedOffset = Math.min(word.length, typedText.length - wordStart);
+        const typedPart = word.slice(0, typedOffset);
+        const untypedPart = word.slice(typedOffset);
+
+        // Render typed characters with GREEN (correct) or RED (incorrect)
+        const renderedTypedChars = Array.from(typedPart).map((char, charIdx) => {
+          const globalIdx = wordStart + charIdx;
+          const userTypedChar = typedText[globalIdx];
+          const isCharCorrect = userTypedChar === char;
+
+          return (
+            <span
+              key={charIdx}
+              className={
+                isCharCorrect
+                  ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                  : 'bg-red-500/25 text-red-600 dark:text-red-400 font-bold rounded-xs px-[0.5px]'
+              }
+            >
+              {char}
+            </span>
+          );
+        });
+
         return (
-          <span key={wordIndex} className="inline-block text-[hsl(var(--foreground))]">
-            {word}
-          </span>
-        );
-      }
-
-      // 2. Completely typed word (past) - clean dimmed text, no red/green
-      if (typedText.length >= wordEnd) {
-        return (
-          <span key={wordIndex} className="inline-block text-[hsl(var(--muted-foreground)/0.55)]">
-            {word}
-          </span>
-        );
-      }
-
-      // 3. Active word - soft primary highlight, no red/green
-      const typedOffset = typedText.length - wordStart;
-      const typedPart = word.slice(0, typedOffset);
-      const untypedPart = word.slice(typedOffset);
-
-      return (
-        <span key={wordIndex} className="inline-block relative bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] font-semibold rounded px-1">
-          <span>{typedPart}</span>
           <span
-            className="inline-block bg-[hsl(var(--primary))] animate-pulse rounded-full align-middle mx-[0.5px]"
-            style={{ width: '2.5px', height: '1.2em' }}
-          />
-          <span className="opacity-70">{untypedPart}</span>
+            key={wordIndex}
+            className="typing-word typing-word-active inline-block relative bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] font-semibold rounded px-1"
+          >
+            <span>{renderedTypedChars}</span>
+            <span
+              className="inline-block bg-[hsl(var(--primary))] animate-pulse rounded-full align-middle mx-[0.5px]"
+              style={{ width: '2.5px', height: '1.2em' }}
+            />
+            <span className="opacity-70">{untypedPart}</span>
+          </span>
+        );
+      }
+
+      // 2. Past completed word -> GREEN if correct, RED if incorrect!
+      if (typedText.length >= completeBoundary) {
+        const userTypedWord = typedText.slice(wordStart, wordEnd);
+        const isWordCorrect = userTypedWord === word;
+
+        return (
+          <span
+            key={wordIndex}
+            className={`typing-word inline-block font-semibold px-1 rounded transition-colors ${
+              isWordCorrect
+                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                : 'text-red-600 dark:text-red-400 bg-red-500/15 line-through decoration-red-500'
+            }`}
+          >
+            {word}
+          </span>
+        );
+      }
+
+      // 3. Upcoming untyped word
+      return (
+        <span
+          key={wordIndex}
+          className="typing-word inline-block text-[hsl(var(--foreground))]"
+        >
+          {word}
         </span>
       );
     });
-  };
-
-  // Render user's typed text with green (correct) and red (incorrect) word colors
-  const renderTypedTextPreview = () => {
-    if (!typedText) return null;
-
-    const targetWords = targetText.trim().split(/\s+/);
-    const typedWords = typedText.split(/\s+/);
-
-    return (
-      <div className="mt-2.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background)/0.7)] p-3">
-        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] flex items-center justify-between">
-          <span>टाइप गरिएको पाठ र नतिजा रंग संकेत (Typed Text Color Display):</span>
-        </p>
-        <div className={`flex flex-wrap gap-1.5 text-lg leading-relaxed ${getDisplayFontClass()}`}>
-          {typedWords.map((word, i) => {
-            if (!word && i === typedWords.length - 1) return null;
-            const targetWord = targetWords[i];
-            const isLast = i === typedWords.length - 1 && !isComplete;
-
-            if (isLast) {
-              const isMatch = targetWord && targetWord.startsWith(word);
-              return (
-                <span key={i} className={`px-2 py-0.5 rounded-md font-semibold text-base border transition-colors ${isMatch ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/40' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40'}`}>
-                  {word}
-                </span>
-              );
-            }
-
-            const isCorrect = word === targetWord;
-            return (
-              <span
-                key={i}
-                className={`px-2 py-0.5 rounded-md font-semibold text-base border transition-colors ${
-                  isCorrect
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40'
-                    : 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/40 line-through'
-                }`}
-              >
-                {word}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Render word-by-word accuracy feedback with green/red coloring
-  const renderWordFeedback = () => {
-    if (!targetText) return null;
-
-    const targetWords = targetText.trim().split(/\s+/).filter(Boolean);
-    const typedWords = typedText.split(/\s+/);
-
-    return (
-      <div className="mt-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card)/0.6)] p-3.5 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] flex items-center gap-1.5">
-            <Target className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
-            शब्द जाँच (Live Word Accuracy Feedback)
-          </span>
-          <span className="text-xs font-semibold text-[hsl(var(--muted-foreground))]">
-            {typedWords.filter((w, i) => i < typedWords.length - 1 && w === targetWords[i]).length} / {targetWords.length} शब्द सही
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1">
-          {targetWords.map((targetWord, idx) => {
-            const typedWord = typedWords[idx];
-            const isCurrentWord = idx === typedWords.length - 1 && !isComplete;
-
-            if (typedWord === undefined) {
-              // Upcoming word
-              return (
-                <span
-                  key={idx}
-                  className="rounded-md border border-dashed border-[hsl(var(--border))] px-2.5 py-1 text-xs text-[hsl(var(--muted-foreground)/0.6)]"
-                >
-                  {targetWord}
-                </span>
-              );
-            }
-
-            if (isCurrentWord) {
-              // Word currently being typed
-              const isMatchSoFar = targetWord.startsWith(typedWord);
-              return (
-                <span
-                  key={idx}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-semibold flex items-center gap-1 animate-pulse ${
-                    isMatchSoFar
-                      ? 'border-blue-500/60 bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                      : 'border-amber-500/60 bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  <span className="text-[10px]">✎</span>
-                  {typedWord || targetWord}
-                </span>
-              );
-            }
-
-            // Completed word check
-            const isCorrect = typedWord === targetWord;
-            if (isCorrect) {
-              return (
-                <span
-                  key={idx}
-                  className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
-                >
-                  <span className="font-bold">✓</span>
-                  {typedWord}
-                </span>
-              );
-            }
-
-            // Incorrect word
-            return (
-              <span
-                key={idx}
-                className="rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5"
-                title={`Expected: ${targetWord}`}
-              >
-                <span className="line-through">{typedWord || '—'}</span>
-                <span className="text-[10px] text-red-500/90 font-normal">({targetWord})</span>
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   if (!isMounted) {
@@ -1104,6 +1039,20 @@ export default function TypingPage() {
                 {showKeyboard ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                 <span>Keyboard</span>
               </button>
+
+              {/* Line Hiding Toggle */}
+              <button
+                onClick={() => setHideCompletedLines(!hideCompletedLines)}
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  hideCompletedLines
+                    ? 'border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] font-bold'
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                }`}
+                title="Hide completed lines when moving to next line (re-appears on Backspace)"
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+                <span>{hideCompletedLines ? 'Line Hiding: ON' : 'Line Hiding: OFF'}</span>
+              </button>
             </motion.div>
           )}
 
@@ -1163,12 +1112,17 @@ export default function TypingPage() {
                     )}
                   </div>
 
-                  {/* Scrollable target text frame */}
+                  {/* Target text frame (Fast GPU-accelerated Line Sliding Window) */}
                   <div
                     ref={textDisplayRef}
-                    className={`h-[110px] sm:h-[125px] overflow-hidden text-left scroll-smooth ${getDisplayFontClass()}`}
+                    className={`h-[76px] sm:h-[88px] overflow-hidden text-left ${getDisplayFontClass()}`}
                   >
-                    {renderTextContent()}
+                    <div
+                      className="transition-transform duration-100 ease-out"
+                      style={{ transform: `translateY(-${lineOffsetY}px)` }}
+                    >
+                      {renderTextContent()}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1204,15 +1158,8 @@ export default function TypingPage() {
                     autoCapitalize="off"
                     autoComplete="off"
                     autoCorrect="off"
-                    spellCheck="false"
                     disabled={isComplete}
                   />
-
-                  {/* Live Typed Text Color Preview (Correct=Green, Incorrect=Red) */}
-                  {renderTypedTextPreview()}
-
-                  {/* Colored Word Feedback Box */}
-                  {renderWordFeedback()}
                 </CardContent>
               </Card>
 

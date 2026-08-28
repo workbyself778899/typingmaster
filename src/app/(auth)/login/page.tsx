@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -14,6 +14,20 @@ import { loginSchema, type LoginInput } from '@/lib/validation/schemas';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <Card className="shadow-lg">
+        <CardContent className="flex items-center justify-center p-12">
+          <Loader2 className="h-6 w-6 animate-spin text-[hsl(var(--primary))]" />
+        </CardContent>
+      </Card>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';

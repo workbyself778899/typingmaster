@@ -90,6 +90,7 @@ const TypingSessionSchema = new Schema<ITypingSession>(
   },
   {
     timestamps: true,
+    suppressReservedKeysWarning: true,
   }
 );
 
