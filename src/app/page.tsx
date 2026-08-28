@@ -140,13 +140,14 @@ export default function HomePage() {
             <Link href="/typing">
               <Button size="xl" className="gap-2 shadow-lg shadow-[hsl(var(--primary)/0.25)]">
                 <Keyboard className="h-5 w-5" />
-                Start Typing — No Login
+                Start Typing Now
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/lessons">
               <Button variant="outline" size="xl" className="gap-2">
-                Create Free Account
+                Browse Lessons
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </motion.div>
@@ -421,8 +422,8 @@ export default function HomePage() {
               Ready to Type Faster?
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
-              Create a free account to save your progress, track your streaks,
-              earn achievements, and unlock the full experience.
+              Dive into adaptive lessons, real-time analytics, and support for
+              English &amp; Nepali typing — completely free, no account needed.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link href="/typing">
@@ -431,16 +432,16 @@ export default function HomePage() {
                   className="bg-white text-[hsl(var(--primary))] shadow-lg hover:bg-white/90 gap-2"
                 >
                   <Keyboard className="h-5 w-5" />
-                  Try as Guest
+                  Start Typing Test
                 </Button>
               </Link>
-              <Link href="/register">
+              <Link href="/lessons">
                 <Button
                   variant="outline"
                   size="xl"
                   className="border-white/30 text-white hover:bg-white/10 gap-2"
                 >
-                  Create Account
+                  Explore Lessons
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>

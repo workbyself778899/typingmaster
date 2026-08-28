@@ -10,26 +10,33 @@ import {
   Trophy,
   ArrowRight,
   Keyboard as KeyboardIcon,
-  Save,
-  LogIn,
   Globe,
   Loader2,
   Eye,
   EyeOff,
+  Type,
 } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
-import { useAuth } from '@/hooks/use-auth';
 import { generateText, type TextDifficulty } from '@/lib/texts';
 import { getRandomNepaliText } from '@/lib/nepaliTexts';
 import type { TypingResult, MistypedKey, SlowestKey } from '@/types';
 
+// ===== Font Style Options =====
+type FontStyle = 'mono' | 'sans' | 'serif' | 'rounded' | 'slab';
+const fontStyleOptions: { id: FontStyle; label: string; cssClass: string }[] = [
+  { id: 'mono',    label: 'Mono',    cssClass: "font-mono" },
+  { id: 'sans',    label: 'Sans',    cssClass: "font-sans" },
+  { id: 'serif',   label: 'Serif',   cssClass: "font-serif" },
+  { id: 'rounded', label: 'Rounded', cssClass: "font-rounded" },
+  { id: 'slab',    label: 'Slab',    cssClass: "font-slab" },
+];
+
 // ===== Types =====
-type LanguageOption = 'english' | 'nepali-unicode' | 'nepali-preeti';
+type LanguageOption = 'english' | 'nepali-unicode' | 'nepali-preeti' | 'nepali-kantipur';
 const durations = [15, 30, 60, 120] as const;
 
 // ===== Government Kalimati / Traditional Nepali Unicode Map =====
@@ -171,12 +178,11 @@ const isConsonantUnicode = (char: string) => {
 const keyboardLayout = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'],
   ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"],
-  ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'],
+  ['shift_l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'shift_r'],
   [' ']
 ];
 
 export default function TypingPage() {
-  const { user } = useAuth();
   
   // Hydration fix
   const [isMounted, setIsMounted] = useState(false);
@@ -192,6 +198,7 @@ export default function TypingPage() {
   const [includePunctuation, setIncludePunctuation] = useState<boolean>(false);
   const [hideCompletedLines, setHideCompletedLines] = useState<boolean>(true);
   const [lineOffsetY, setLineOffsetY] = useState<number>(0);
+  const [fontStyle, setFontStyle] = useState<FontStyle>('mono');
 
 
   
@@ -212,8 +219,6 @@ export default function TypingPage() {
   // Results
   const [result, setResult] = useState<TypingResult | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   // Refs
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -238,6 +243,8 @@ export default function TypingPage() {
       return generateText({ duration: dur, difficulty: diff, includeNumbers: nums, includePunctuation: punct });
     } else if (lang === 'nepali-unicode') {
       return getRandomNepaliText('unicode');
+    } else if (lang === 'nepali-kantipur') {
+      return getRandomNepaliText('kantipur');
     } else {
       return getRandomNepaliText('preeti');
     }
@@ -254,6 +261,8 @@ export default function TypingPage() {
         setLanguage('english');
       } else if (langParam === 'preeti' || langParam === 'nepali-preeti') {
         setLanguage('nepali-preeti');
+      } else if (langParam === 'kantipur' || langParam === 'nepali-kantipur') {
+        setLanguage('nepali-kantipur');
       } else if (langParam === 'unicode' || langParam === 'nepali' || langParam === 'nepali-unicode') {
         setLanguage('nepali-unicode');
       }
@@ -378,7 +387,11 @@ export default function TypingPage() {
 
     // Track physical keypress state
     const keyStr = e.key.toLowerCase();
-    setPressedKeys((prev) => ({ ...prev, [keyStr]: true }));
+    if (e.key === 'Shift') {
+      setPressedKeys((prev) => ({ ...prev, shift: true, shift_l: true, shift_r: true }));
+    } else {
+      setPressedKeys((prev) => ({ ...prev, [keyStr]: true }));
+    }
 
     if (e.key === 'Backspace') {
       if (language === 'nepali-unicode') {
@@ -472,8 +485,12 @@ export default function TypingPage() {
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    const keyStr = e.key.toLowerCase();
-    setPressedKeys((prev) => ({ ...prev, [keyStr]: false }));
+    if (e.key === 'Shift') {
+      setPressedKeys((prev) => ({ ...prev, shift: false, shift_l: false, shift_r: false }));
+    } else {
+      const keyStr = e.key.toLowerCase();
+      setPressedKeys((prev) => ({ ...prev, [keyStr]: false }));
+    }
   };
 
   // Complete test
@@ -588,7 +605,6 @@ export default function TypingPage() {
     typedTextRef.current = '';
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     
     lastKeystrokeTimeRef.current = 0;
@@ -619,7 +635,6 @@ export default function TypingPage() {
     setElapsedSeconds(0);
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     setTargetText(loadText(lang, duration, difficulty, includeNumbers, includePunctuation));
     setTimeout(focusInput, 50);
@@ -637,7 +652,6 @@ export default function TypingPage() {
     setElapsedSeconds(0);
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     setTargetText(loadText(language, d, difficulty, includeNumbers, includePunctuation));
     setTimeout(focusInput, 50);
@@ -655,7 +669,6 @@ export default function TypingPage() {
     setElapsedSeconds(0);
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     setTargetText(loadText(language, duration, d, includeNumbers, includePunctuation));
     setTimeout(focusInput, 50);
@@ -673,7 +686,6 @@ export default function TypingPage() {
     setElapsedSeconds(0);
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     setTargetText(loadText(language, duration, difficulty, nums, includePunctuation));
     setTimeout(focusInput, 50);
@@ -691,46 +703,12 @@ export default function TypingPage() {
     setElapsedSeconds(0);
     setResult(null);
     setShowResult(false);
-    setSaved(false);
     setPendingMatra(null);
     setTargetText(loadText(language, duration, difficulty, includeNumbers, punct));
     setTimeout(focusInput, 50);
   };
 
-  // Save session
-  const handleSave = async () => {
-    if (!result || !user || saved) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language,
-          keyboardLayout: language === 'english' ? 'qwerty' : language === 'nepali-unicode' ? 'nepali-unicode' : 'preeti',
-          mode: 'free',
-          duration: result.duration,
-          grossWpm: result.grossWpm,
-          netWpm: result.netWpm,
-          accuracy: result.accuracy,
-          correctCharacters: result.correctCharacters,
-          incorrectCharacters: result.incorrectCharacters,
-          errors: result.incorrectCharacters,
-          backspaces: backspaceCount,
-          totalKeystrokes: typedText.length + backspaceCount,
-          textContent: targetText.slice(0, 500),
-          keystrokeData: result.keystrokes.slice(0, 200),
-          startedAt: new Date(startTime || Date.now() - result.duration * 1000).toISOString(),
-          completedAt: new Date().toISOString(),
-        }),
-      });
-      if (res.ok) setSaved(true);
-    } catch {
-      console.error('Failed to save session');
-    } finally {
-      setSaving(false);
-    }
-  };
+  // (Save session removed — no login system)
 
   // Live stats WPM calculations with millisecond precision
   const now = Date.now();
@@ -750,38 +728,49 @@ export default function TypingPage() {
   const timeRemaining = Math.max(0, duration - elapsedSeconds);
   const isTimeLow = timeRemaining <= 10 && isStarted && !isComplete;
 
-  // Font family helper
+  // Font family helper — respects language + user font style choice
   const getDisplayFontClass = () => {
     if (language === 'nepali-preeti') {
       return 'font-preeti font-normal text-2xl sm:text-3xl tracking-normal leading-[2.0]';
     }
-    if (language === 'nepali-unicode') {
-      return 'font-sans font-medium text-xl sm:text-2xl tracking-normal leading-[2.1]';
+    if (language === 'nepali-kantipur') {
+      return 'font-kantipur font-normal text-2xl sm:text-3xl tracking-normal leading-[2.0]';
     }
-    return 'font-mono text-lg sm:text-xl tracking-wide leading-[2.1]';
+    const sizeClass = language === 'nepali-unicode'
+      ? 'text-xl sm:text-2xl'
+      : 'text-lg sm:text-xl';
+    const selected = fontStyleOptions.find(f => f.id === fontStyle);
+    const fontClass = selected ? selected.cssClass : 'font-mono';
+    return `${fontClass} font-medium ${sizeClass} tracking-normal leading-[2.1]`;
   };
 
-  // Expected keyboard key logic
-  const getExpectedKey = () => {
-    if (isComplete || !targetText) return null;
+  // Expected keyboard key & Shift requirement logic
+  const getExpectedCharInfo = () => {
+    if (isComplete || !targetText) return { key: null, requiresShift: false };
     const char = targetText[typedText.length];
-    if (!char) return null;
+    if (!char) return { key: null, requiresShift: false };
 
-    if (language === 'english' || language === 'nepali-preeti') {
-      return char.toLowerCase();
+    const shiftSymbols = ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '{', '}', '|', ':', '"', '<', '>', '?'];
+    const isUppercase = (char >= 'A' && char <= 'Z') || shiftSymbols.includes(char);
+
+    if (language === 'english' || language === 'nepali-preeti' || language === 'nepali-kantipur') {
+      return { key: char.toLowerCase(), requiresShift: isUppercase };
     }
 
-    // Nepali expected key lookup
-    if (char === ' ') return ' ';
-    
+    if (char === ' ') return { key: ' ', requiresShift: false };
+
     const activeMap = language === 'nepali-unicode' ? unicodeKeyboardMap : preetiKeyboardMap;
     const entry = Object.entries(activeMap).find(([k, v]) => v === char);
-    if (entry) return entry[0].toLowerCase();
-    
-    return null;
+    if (entry) {
+      const rawKey = entry[0];
+      const needsShift = (rawKey >= 'A' && rawKey <= 'Z') || shiftSymbols.includes(rawKey);
+      return { key: rawKey.toLowerCase(), requiresShift: needsShift };
+    }
+
+    return { key: null, requiresShift: false };
   };
 
-  const expectedKey = getExpectedKey();
+  const { key: expectedKey, requiresShift: expectedRequiresShift } = getExpectedCharInfo();
 
   // Rendering target prompt text with GREEN for correct and RED for wrong text
   const renderTextContent = () => {
@@ -904,7 +893,7 @@ export default function TypingPage() {
   if (!isMounted) {
     return (
       <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
-        <Navbar user={user ? { name: user.name, email: user.email, role: user.role, level: user.level } : null} />
+        <Navbar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
             <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--primary))] mx-auto" />
@@ -918,7 +907,7 @@ export default function TypingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[hsl(var(--background))]">
-      <Navbar user={user ? { name: user.name, email: user.email, role: user.role, level: user.level } : null} />
+      <Navbar />
 
       <main className="flex-1">
         <div className="mx-auto max-w-4xl px-3 py-3 sm:py-5">
@@ -938,6 +927,7 @@ export default function TypingPage() {
                     { id: 'english', label: 'English' },
                     { id: 'nepali-unicode', label: 'Nepali (Unicode)' },
                     { id: 'nepali-preeti', label: 'Nepali (Preeti)' },
+                    { id: 'nepali-kantipur', label: 'Nepali (Kantipur)' },
                   ].map((lang) => (
                     <button
                       key={lang.id}
@@ -1053,6 +1043,29 @@ export default function TypingPage() {
                 <EyeOff className="h-3.5 w-3.5" />
                 <span>{hideCompletedLines ? 'Line Hiding: ON' : 'Line Hiding: OFF'}</span>
               </button>
+
+              {/* Font Style Selector (English / Unicode only) */}
+              {language !== 'nepali-preeti' && (
+                <div className="flex items-center gap-1.5">
+                  <Type className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
+                  <div className="flex rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 sm:p-1">
+                    {fontStyleOptions.map((fs) => (
+                      <button
+                        key={fs.id}
+                        onClick={() => setFontStyle(fs.id)}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                          fontStyle === fs.id
+                            ? 'bg-[hsl(var(--primary))] text-white'
+                            : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                        }`}
+                        title={`Font: ${fs.label}`}
+                      >
+                        {fs.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1107,7 +1120,7 @@ export default function TypingPage() {
                     {!isStarted && (
                       <span className="text-xs text-[hsl(var(--muted-foreground))] flex items-center gap-1">
                         <KeyboardIcon className="h-3.5 w-3.5" />
-                        Click & start typing to begin
+                        Click &amp; start typing to begin
                       </span>
                     )}
                   </div>
@@ -1124,23 +1137,8 @@ export default function TypingPage() {
                       {renderTextContent()}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* BOX 2: Live Typed Nepali Input & Colored Word Feedback Box */}
-              <Card className="border-[hsl(var(--primary)/0.3)] shadow-md bg-[hsl(var(--card))]">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="mb-2 flex items-center justify-between">
-                    <label htmlFor="nepali-typing-input" className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--primary))] flex items-center gap-1.5 cursor-pointer">
-                      <KeyboardIcon className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
-                      {language === 'nepali-unicode' ? 'तपाईँको नेपाली टाइपिंग बाकस (Your Typed Text Box)' : 'Your Typed Text Box'}
-                    </label>
-                    <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                      {typedText.length} / {targetText.length} {language === 'nepali-unicode' ? 'अक्षर' : 'chars'}
-                    </span>
-                  </div>
-
-                  {/* Visible Interactive Input Box */}
+                  {/* Hidden textarea for capturing keystrokes */}
                   <textarea
                     id="nepali-typing-input"
                     ref={inputRef}
@@ -1148,13 +1146,10 @@ export default function TypingPage() {
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyUp}
-                    placeholder={
-                      language === 'nepali-unicode'
-                        ? 'यहाँ टाइप गर्नुहोस्... (Start typing here in Nepali Unicode)'
-                        : 'Start typing here...'
-                    }
-                    rows={2}
-                    className={`w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-3 text-lg shadow-inner transition-all focus:border-[hsl(var(--primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.25)] ${getDisplayFontClass()}`}
+                    rows={1}
+                    className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
+                    aria-hidden="true"
+                    tabIndex={-1}
                     autoCapitalize="off"
                     autoComplete="off"
                     autoCorrect="off"
@@ -1165,63 +1160,117 @@ export default function TypingPage() {
 
               {/* Controls */}
               <div className="mt-2.5 flex items-center justify-center gap-3">
-                <Button variant="ghost" size="sm" onClick={handleNewTest} className="h-8 gap-1.5 text-xs text-[hsl(var(--muted-foreground))]">
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Restart Test
-                </Button>
+                <Button variant="ghost" size="sm" onClick={handleNewTest} className="h-8 gap-1.5 text-xs text-[hsl(var(--muted-foreground))]"><RotateCcw className="h-3.5 w-3.5" />Restart Test</Button>
               </div>
             </div>
           )}
 
           {/* ===== Dynamic Virtual Keyboard ===== */}
           {!showResult && showKeyboard && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-3 sm:mt-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-2.5 sm:p-4 shadow-sm max-w-3xl mx-auto"
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="mt-4 sm:mt-6 max-w-3xl mx-auto"
             >
-              <div className="space-y-1 sm:space-y-1.5 flex flex-col items-center">
-                {keyboardLayout.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-1 justify-center w-full">
-                    {row.map((char) => {
-                      const isSpace = char === ' ';
-                      const isExpected = expectedKey === char;
-                      const isPressed = pressedKeys[char];
-                      
-                      // Match Nepali characters map for keycap labels
-                      const getDevanagariLabel = () => {
-                        if (language === 'english') return '';
-                        const activeMap = language === 'nepali-unicode' ? unicodeKeyboardMap : preetiKeyboardMap;
-                        return activeMap[char] || '';
-                      };
+              {/* Keyboard housing */}
+              <div className="relative rounded-2xl border-2 border-[hsl(var(--border))] bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--muted)/0.7)] p-3 sm:p-5 shadow-2xl shadow-[hsl(var(--primary)/0.1)]">
 
-                      const devanagariLabel = getDevanagariLabel();
+                {/* Top shine */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-                      return (
-                        <div
-                          key={char}
-                          className={`flex flex-col items-center justify-center rounded-md sm:rounded-lg border text-xs font-semibold select-none transition-all duration-75 ${
-                            isSpace ? 'w-[200px] sm:w-[260px]' : 'w-[28px] sm:w-[38px]'
-                          } h-[34px] sm:h-[38px] ${
-                            isPressed 
-                              ? 'bg-[hsl(var(--primary))] text-white scale-95 border-transparent shadow-sm'
-                              : isExpected 
-                                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)] text-[hsl(var(--primary))] animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.3)]'
-                                : 'border-[hsl(var(--border))] bg-[hsl(var(--keyboard-key))] text-[hsl(var(--muted-foreground))]'
-                          }`}
-                        >
-                          <span className="uppercase text-[9px] sm:text-[10px] opacity-70 leading-none">{isSpace ? 'Space' : char}</span>
-                          {devanagariLabel && (
-                            <span className="text-[10px] sm:text-[11px] font-bold text-[hsl(var(--foreground))] leading-none mt-0.5">{devanagariLabel}</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                <div className="space-y-1.5 sm:space-y-2 flex flex-col items-center">
+                  {keyboardLayout.map((row, rowIndex) => (
+                    <div key={rowIndex} className={`flex gap-1 sm:gap-1.5 justify-center w-full ${rowIndex === 1 ? 'pl-2 sm:pl-4' : ''}`}>
+                      {row.map((char) => {
+                        const isSpace = char === ' ';
+                        const isShift = char === 'shift_l' || char === 'shift_r';
+                        
+                        const isExpected = isShift ? expectedRequiresShift : (expectedKey === char);
+                        const isPressed = isShift ? (pressedKeys['shift'] || pressedKeys[char]) : pressedKeys[char];
+
+                        // Devanagari label
+                        const getDevanagariLabel = () => {
+                          if (language === 'english' || isShift) return '';
+                          const activeMap = (language === 'nepali-unicode') ? unicodeKeyboardMap : preetiKeyboardMap;
+                          return activeMap[char] || '';
+                        };
+                        const devanagariLabel = getDevanagariLabel();
+
+                        // Keycap width sizing
+                        let keyWidthClass = 'w-[30px] sm:w-[42px]';
+                        if (isSpace) keyWidthClass = 'w-[180px] sm:w-[240px]';
+                        if (isShift) keyWidthClass = 'w-[50px] sm:w-[68px]';
+
+                        // Black & White (Monochrome) idle keycap styling
+                        const monochromeIdleClass = 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 font-bold';
+
+                        // Glowing highlight style when key is expected to be pressed
+                        const glowingExpectedClass = isShift
+                          ? 'border-rose-500 bg-rose-500 text-white shadow-[0_0_26px_9px_rgba(244,63,94,0.9)] animate-pulse scale-105 font-extrabold'
+                          : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-white shadow-[0_0_26px_9px_rgba(59,130,246,0.85)] animate-pulse scale-105 font-extrabold';
+
+                        // Pressed key style
+                        const pressedClass = 'scale-90 border-transparent bg-indigo-600 dark:bg-indigo-500 text-white shadow-none translate-y-0.5 font-black';
+
+                        return (
+                          <div
+                            key={char}
+                            className={[
+                              'relative flex flex-col items-center justify-center select-none',
+                              'rounded-lg border-2 transition-all duration-75',
+                              keyWidthClass,
+                              'h-[36px] sm:h-[42px]',
+                              // state-based styles
+                              isPressed
+                                ? pressedClass
+                                : isExpected
+                                  ? glowingExpectedClass
+                                  : monochromeIdleClass,
+                              // 3D keycap bottom shadow for black & white keys
+                              !isPressed && !isExpected ? 'shadow-[0_3px_0_0_rgba(0,0,0,0.12)] dark:shadow-[0_3px_0_0_rgba(0,0,0,0.6)]' : '',
+                            ].join(' ')}
+                          >
+                            {/* Key label */}
+                            <span className={`uppercase leading-none ${isShift ? 'text-[9px] sm:text-[11px] font-black tracking-wider flex items-center gap-0.5' : isSpace ? 'text-[10px] sm:text-xs tracking-widest font-extrabold' : 'text-[10px] sm:text-[13px] font-extrabold'}`}>
+                              {isShift ? '⇧ SHIFT' : isSpace ? 'SPACE' : char}
+                            </span>
+                            {/* Devanagari sub-label */}
+                            {devanagariLabel && (
+                              <span className="text-[9px] sm:text-[11px] font-extrabold leading-none mt-0.5 opacity-90">
+                                {devanagariLabel}
+                              </span>
+                            )}
+                            {/* Glow ring animation when key is expected */}
+                            {isExpected && !isPressed && (
+                              <span className="pointer-events-none absolute inset-0 rounded-lg border-2 border-current opacity-75 animate-ping" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Status Legend */}
+                <div className="mt-3 sm:mt-4 flex flex-wrap justify-center gap-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))]">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full border border-zinc-400 bg-white dark:bg-zinc-900 shadow-xs" />
+                    Standard Key (Black & White)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[hsl(var(--primary))]">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-[hsl(var(--primary))] shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                    Next Key (Glowing)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-rose-500">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+                    Shift Key (Glowing)
+                  </span>
+                </div>
               </div>
             </motion.div>
           )}
+
 
           {/* ===== Results Screen ===== */}
           <AnimatePresence>
@@ -1332,48 +1381,7 @@ export default function TypingPage() {
                     <RotateCcw className="h-4 w-4" />
                     Try Again
                   </Button>
-                  {user ? (
-                    <Button
-                      size="lg"
-                      variant={saved ? 'success' : 'outline'}
-                      onClick={handleSave}
-                      disabled={saving || saved}
-                      className="gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Result'}
-                    </Button>
-                  ) : (
-                    <Link href="/register">
-                      <Button size="lg" variant="outline" className="gap-2">
-                        <LogIn className="h-4 w-4" />
-                        Sign Up to Save Results
-                      </Button>
-                    </Link>
-                  )}
                 </div>
-
-                {!user && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-8 rounded-xl border border-[hsl(var(--primary)/0.2)] bg-[hsl(var(--primary)/0.05)] p-6 text-center"
-                  >
-                    <h3 className="font-semibold">Want to track your progress?</h3>
-                    <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-                      Create a free account to save your results, track streaks, and compare progress.
-                    </p>
-                    <div className="mt-4 flex justify-center gap-3">
-                      <Link href="/register">
-                        <Button size="sm">Create Account</Button>
-                      </Link>
-                      <Link href="/login">
-                        <Button variant="ghost" size="sm">Log In</Button>
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
