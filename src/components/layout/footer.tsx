@@ -40,8 +40,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/statistics" className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
-                  Statistics
+                <Link href="/text-mode" className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
+                  Text Mode
                 </Link>
               </li>
             </ul>

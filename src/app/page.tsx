@@ -18,9 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
-
-/* ---------- animation helpers ---------- */
 const fadeUp: any = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
@@ -450,7 +447,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }

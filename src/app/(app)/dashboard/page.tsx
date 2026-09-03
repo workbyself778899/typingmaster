@@ -14,6 +14,7 @@ import {
   TrendingUp,
   ArrowRight,
   Loader2,
+  Type,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -298,11 +299,10 @@ export default function DashboardPage() {
                 Practice
               </Button>
             </Link>
-            <Link href="/statistics">
-              <Button variant="ghost" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Full Stats
-                <ArrowRight className="h-3 w-3" />
+            <Link href="/text-mode">
+              <Button variant="outline" className="gap-2">
+                <Type className="h-4 w-4" />
+                Text Mode
               </Button>
             </Link>
           </CardContent>

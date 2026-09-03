@@ -20,20 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
 import { generateText, type TextDifficulty } from '@/lib/texts';
 import { getRandomNepaliText } from '@/lib/nepaliTexts';
 import type { TypingResult, MistypedKey, SlowestKey } from '@/types';
 
-// ===== Font Style Options =====
-type FontStyle = 'mono' | 'sans' | 'serif' | 'rounded' | 'slab';
-const fontStyleOptions: { id: FontStyle; label: string; cssClass: string }[] = [
-  { id: 'mono',    label: 'Mono',    cssClass: "font-mono" },
-  { id: 'sans',    label: 'Sans',    cssClass: "font-sans" },
-  { id: 'serif',   label: 'Serif',   cssClass: "font-serif" },
-  { id: 'rounded', label: 'Rounded', cssClass: "font-rounded" },
-  { id: 'slab',    label: 'Slab',    cssClass: "font-slab" },
-];
+
 
 // ===== Types =====
 type LanguageOption = 'english' | 'nepali-unicode' | 'nepali-preeti' | 'nepali-kantipur';
@@ -198,7 +189,8 @@ export default function TypingPage() {
   const [includePunctuation, setIncludePunctuation] = useState<boolean>(false);
   const [hideCompletedLines, setHideCompletedLines] = useState<boolean>(true);
   const [lineOffsetY, setLineOffsetY] = useState<number>(0);
-  const [fontStyle, setFontStyle] = useState<FontStyle>('mono');
+  const [isCustomDurationOpen, setIsCustomDurationOpen] = useState(false);
+  const [customDurationInput, setCustomDurationInput] = useState('');
 
 
   
@@ -305,7 +297,7 @@ export default function TypingPage() {
     focusInput();
   }, [targetText]);
 
-  // Fast Line-Sliding Handler (Slides completed line up on line change, slides back down on backspace)
+  // Fast Line-Sliding Handler (Slides completed lines up when moving past line 2)
   useEffect(() => {
     if (!textDisplayRef.current || isComplete) return;
 
@@ -315,14 +307,12 @@ export default function TypingPage() {
 
     const wordTop = activeWordEl.offsetTop;
 
-    // Detect first line top (~6px to 12px)
-    if (wordTop <= 24) {
+    if (wordTop <= 28) {
       if (lineOffsetY !== 0) setLineOffsetY(0);
     } else {
-      // Calculate target line offset (line step ~38px)
-      const lineStep = 38;
+      const lineStep = 42;
       const lineIndex = Math.floor((wordTop - 8) / lineStep);
-      const targetOffset = Math.max(0, lineIndex * lineStep);
+      const targetOffset = lineIndex >= 2 ? Math.max(0, (lineIndex - 1) * lineStep) : 0;
       if (lineOffsetY !== targetOffset) {
         setLineOffsetY(targetOffset);
       }
@@ -728,20 +718,18 @@ export default function TypingPage() {
   const timeRemaining = Math.max(0, duration - elapsedSeconds);
   const isTimeLow = timeRemaining <= 10 && isStarted && !isComplete;
 
-  // Font family helper — respects language + user font style choice
+  // Font family helper — respects language
   const getDisplayFontClass = () => {
     if (language === 'nepali-preeti') {
-      return 'font-preeti font-normal text-2xl sm:text-3xl tracking-normal leading-[2.0]';
+      return 'font-preeti font-normal text-2xl sm:text-3xl tracking-normal leading-[2.2]';
     }
     if (language === 'nepali-kantipur') {
-      return 'font-kantipur font-normal text-2xl sm:text-3xl tracking-normal leading-[2.0]';
+      return 'font-kantipur font-normal text-2xl sm:text-3xl tracking-normal leading-[2.2]';
     }
     const sizeClass = language === 'nepali-unicode'
       ? 'text-xl sm:text-2xl'
       : 'text-lg sm:text-xl';
-    const selected = fontStyleOptions.find(f => f.id === fontStyle);
-    const fontClass = selected ? selected.cssClass : 'font-mono';
-    return `${fontClass} font-medium ${sizeClass} tracking-normal leading-[2.1]`;
+    return `font-mono font-medium ${sizeClass} tracking-normal leading-[2.2]`;
   };
 
   // Expected keyboard key & Shift requirement logic
@@ -787,7 +775,6 @@ export default function TypingPage() {
 
       // Handle space tokens
       if (/^\s+$/.test(word)) {
-        const isCurrentSpace = typedText.length >= wordStart && typedText.length < wordEnd;
         const isPastSpace = typedText.length >= wordEnd;
         const typedChar = typedText[wordStart];
         const isCorrectSpace = isPastSpace && (typedChar === word || typedChar === ' ');
@@ -803,12 +790,6 @@ export default function TypingPage() {
                 : ''
             }`}
           >
-            {isCurrentSpace && (
-              <span
-                className="absolute left-0 bg-[hsl(var(--primary))] animate-pulse rounded-full"
-                style={{ width: '2.5px', top: '10%', height: '80%', zIndex: 10 }}
-              />
-            )}
             {word.replace(/ /g, '\u00A0')}
           </span>
         );
@@ -900,7 +881,6 @@ export default function TypingPage() {
             <p className="text-[hsl(var(--muted-foreground))] text-sm font-medium animate-pulse">Preparing typing test...</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -910,7 +890,7 @@ export default function TypingPage() {
       <Navbar />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-3 py-3 sm:py-5">
+        <div className="mx-auto max-w-5xl px-3 py-4 sm:py-6">
           
           {/* ===== Config Bar ===== */}
           {!isStarted && !showResult && (
@@ -947,13 +927,16 @@ export default function TypingPage() {
               {/* Duration Selection */}
               <div className="flex items-center gap-1.5">
                 <Timer className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
-                <div className="flex rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 sm:p-1">
+                <div className="flex items-center rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 sm:p-1 gap-1">
                   {durations.map((d) => (
                     <button
                       key={d}
-                      onClick={() => handleDurationChange(d)}
+                      onClick={() => {
+                        setIsCustomDurationOpen(false);
+                        handleDurationChange(d);
+                      }}
                       className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                        duration === d
+                        duration === d && !isCustomDurationOpen
                           ? 'bg-[hsl(var(--primary))] text-white'
                           : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
                       }`}
@@ -961,6 +944,61 @@ export default function TypingPage() {
                       {d}s
                     </button>
                   ))}
+
+                  {/* Custom Duration Button / Form */}
+                  {isCustomDurationOpen ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const val = parseInt(customDurationInput, 10);
+                        if (!isNaN(val) && val >= 5 && val <= 3600) {
+                          handleDurationChange(val);
+                          setIsCustomDurationOpen(false);
+                        }
+                      }}
+                      className="flex items-center gap-1 border-l border-[hsl(var(--border))] pl-1.5"
+                    >
+                      <input
+                        type="number"
+                        autoFocus
+                        min={5}
+                        max={3600}
+                        placeholder="Sec"
+                        value={customDurationInput}
+                        onChange={(e) => setCustomDurationInput(e.target.value)}
+                        className="w-16 rounded bg-[hsl(var(--muted))] px-2 py-0.5 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded bg-[hsl(var(--primary))] px-2 py-0.5 text-[11px] font-semibold text-white hover:opacity-90 transition-opacity"
+                      >
+                        Set
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomDurationOpen(false)}
+                        className="rounded px-1.5 py-0.5 text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setCustomDurationInput(!durations.includes(duration as any) ? String(duration) : '');
+                        setIsCustomDurationOpen(true);
+                      }}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        !durations.includes(duration as any)
+                          ? 'bg-[hsl(var(--primary))] text-white font-semibold'
+                          : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                      }`}
+                      title="Set custom duration in seconds"
+                    >
+                      {!durations.includes(duration as any) ? `${duration}s (Custom)` : 'Custom'}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1044,28 +1082,7 @@ export default function TypingPage() {
                 <span>{hideCompletedLines ? 'Line Hiding: ON' : 'Line Hiding: OFF'}</span>
               </button>
 
-              {/* Font Style Selector (English / Unicode only) */}
-              {language !== 'nepali-preeti' && (
-                <div className="flex items-center gap-1.5">
-                  <Type className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))]" />
-                  <div className="flex rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-0.5 sm:p-1">
-                    {fontStyleOptions.map((fs) => (
-                      <button
-                        key={fs.id}
-                        onClick={() => setFontStyle(fs.id)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                          fontStyle === fs.id
-                            ? 'bg-[hsl(var(--primary))] text-white'
-                            : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-                        }`}
-                        title={`Font: ${fs.label}`}
-                      >
-                        {fs.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </motion.div>
           )}
 
@@ -1128,7 +1145,7 @@ export default function TypingPage() {
                   {/* Target text frame (Fast GPU-accelerated Line Sliding Window) */}
                   <div
                     ref={textDisplayRef}
-                    className={`h-[76px] sm:h-[88px] overflow-hidden text-left ${getDisplayFontClass()}`}
+                    className={`min-h-[160px] sm:min-h-[190px] max-h-[220px] overflow-hidden text-left ${getDisplayFontClass()}`}
                   >
                     <div
                       className="transition-transform duration-100 ease-out"
@@ -1387,8 +1404,6 @@ export default function TypingPage() {
           </AnimatePresence>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

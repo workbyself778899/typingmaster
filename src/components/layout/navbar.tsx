@@ -8,20 +8,34 @@ import {
   Keyboard,
   GraduationCap,
   Target,
-  BarChart3,
   Menu,
   X,
   Zap,
+  Type,
+  ChevronDown,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/typing', label: 'Typing Test', icon: Keyboard },
-  { href: '/lessons', label: 'Lessons', icon: GraduationCap },
+  {
+    label: 'Lessons',
+    icon: GraduationCap,
+    dropdown: [
+      { href: '/lessons?lang=english', label: 'English' },
+      { href: '/lessons?lang=nepali', label: 'Nepali' },
+    ],
+  },
   { href: '/practice', label: 'Practice', icon: Target },
-  { href: '/statistics', label: 'Statistics', icon: BarChart3 },
+  { href: '/text-mode', label: 'Text Mode', icon: Type },
 ];
 
 export function Navbar() {
@@ -42,9 +56,40 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            if (item.dropdown) {
+              const isActive = pathname.startsWith('/lessons');
+              return (
+                <DropdownMenu key="lessons-dropdown">
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={isActive ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className={cn(
+                        'gap-2 text-sm',
+                        isActive && 'bg-[hsl(var(--secondary))] font-medium'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                      <ChevronDown className="h-3 w-3 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {item.dropdown.map((drop) => (
+                      <DropdownMenuItem key={drop.href} asChild>
+                        <Link href={drop.href} className="w-full cursor-pointer">
+                          {drop.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+
+            const isActive = item.href && pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href || item.label} href={item.href || '#'}>
                 <Button
                   variant={isActive ? 'secondary' : 'ghost'}
                   size="sm"
@@ -90,11 +135,34 @@ export function Navbar() {
           >
             <div className="space-y-1 px-4 py-3">
               {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                if (item.dropdown) {
+                  return (
+                    <div key="mobile-lessons" className="space-y-1">
+                      <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </div>
+                      <div className="ml-6 space-y-1 border-l border-[hsl(var(--border))] pl-3">
+                        {item.dropdown.map((drop) => (
+                          <Link
+                            key={drop.href}
+                            href={drop.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="block rounded-md px-3 py-2 text-sm hover:bg-[hsl(var(--accent))] transition-colors"
+                          >
+                            {drop.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const isActive = item.href && pathname.startsWith(item.href);
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    key={item.href || item.label}
+                    href={item.href || '#'}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',

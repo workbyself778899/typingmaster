@@ -70,10 +70,12 @@ export const nepaliTexts: NepaliTextPair[] = [
   }
 ];
 
-export function getRandomNepaliText(layout: 'unicode' | 'preeti' | 'kantipur'): string {
-  const index = Math.floor(Math.random() * nepaliTexts.length);
-  const pair = nepaliTexts[index];
-  if (layout === 'kantipur') return pair.kantipur;
-  if (layout === 'preeti') return pair.preeti;
-  return pair.unicode;
+export function getRandomNepaliText(layout: 'unicode' | 'preeti' | 'kantipur', count = 4): string {
+  const shuffled = [...nepaliTexts].sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, Math.min(count, nepaliTexts.length));
+  return selected.map(pair => {
+    if (layout === 'kantipur') return pair.kantipur;
+    if (layout === 'preeti') return pair.preeti;
+    return pair.unicode;
+  }).join(' ');
 }

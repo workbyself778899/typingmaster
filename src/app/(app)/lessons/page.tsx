@@ -1,7 +1,7 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   GraduationCap,
@@ -161,11 +161,47 @@ const difficultyColors: Record<string, string> = {
 };
 
 export default function LessonsPage() {
-  const [selectedFont, setSelectedFont] = useState<string>('all');
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-12 text-center text-sm text-[hsl(var(--muted-foreground))]">Loading lessons...</div>}>
+      <LessonsContent />
+    </Suspense>
+  );
+}
 
-  const filteredCategories = selectedFont === 'all'
-    ? lessonCategories
-    : lessonCategories.filter((c) => c.fontTag.toLowerCase() === selectedFont.toLowerCase());
+function LessonsContent() {
+  const searchParams = useSearchParams();
+  const langQuery = searchParams.get('lang');
+
+  const getInitialFont = () => {
+    if (!langQuery) return 'all';
+    const lower = langQuery.toLowerCase();
+    if (lower === 'nepali' || lower === 'np') return 'nepali';
+    if (lower === 'english' || lower === 'en') return 'english';
+    if (lower === 'unicode') return 'unicode';
+    if (lower === 'preeti') return 'preeti';
+    if (lower === 'kantipur') return 'kantipur';
+    return 'all';
+  };
+
+  const [selectedFont, setSelectedFont] = useState<string>(getInitialFont());
+
+  useEffect(() => {
+    if (langQuery) {
+      const lower = langQuery.toLowerCase();
+      if (lower === 'nepali' || lower === 'np') setSelectedFont('nepali');
+      else if (lower === 'english' || lower === 'en') setSelectedFont('english');
+      else if (lower === 'unicode') setSelectedFont('unicode');
+      else if (lower === 'preeti') setSelectedFont('preeti');
+      else if (lower === 'kantipur') setSelectedFont('kantipur');
+    }
+  }, [langQuery]);
+
+  const filteredCategories = lessonCategories.filter((c) => {
+    if (selectedFont === 'all') return true;
+    if (selectedFont === 'nepali') return c.fontTag !== 'English';
+    if (selectedFont === 'english') return c.fontTag === 'English';
+    return c.fontTag.toLowerCase() === selectedFont.toLowerCase();
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -191,10 +227,13 @@ export default function LessonsPage() {
       </motion.div>
 
       {/* Font Filter Tabs */}
-      <Tabs defaultValue="all" onValueChange={setSelectedFont}>
+      <Tabs value={selectedFont} onValueChange={setSelectedFont}>
         <TabsList className="mb-6 flex flex-wrap gap-2 h-auto p-1 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl">
           <TabsTrigger value="all" className="rounded-lg px-4 py-2 text-xs font-semibold">
-            ✨ All Fonts
+            ✨ All Lessons
+          </TabsTrigger>
+          <TabsTrigger value="nepali" className="rounded-lg px-4 py-2 text-xs font-semibold gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            🇳🇵 Nepali (All)
           </TabsTrigger>
           <TabsTrigger value="english" className="rounded-lg px-4 py-2 text-xs font-semibold gap-1.5">
             🇺🇸 English
