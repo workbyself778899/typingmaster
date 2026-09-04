@@ -172,11 +172,10 @@ export default function HomePage() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.7 + i * 0.04, duration: 0.3 }}
-                      className={`keyboard-key text-xs ${
-                        key === 'F'
+                      className={`keyboard-key text-xs ${key === 'F'
                           ? 'keyboard-key-active'
                           : ''
-                      }`}
+                        }`}
                     >
                       {key}
                     </motion.div>
@@ -191,11 +190,10 @@ export default function HomePage() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.8 + i * 0.04, duration: 0.3 }}
-                      className={`keyboard-key text-xs ${
-                        key === 'F'
+                      className={`keyboard-key text-xs ${key === 'F'
                           ? 'keyboard-key-active'
                           : ''
-                      }`}
+                        }`}
                     >
                       {key}
                     </motion.div>

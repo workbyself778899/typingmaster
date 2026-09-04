@@ -13,6 +13,7 @@ import {
   Zap,
   Type,
   ChevronDown,
+  Swords,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ const navItems = [
   },
   { href: '/practice', label: 'Practice', icon: Target },
   { href: '/text-mode', label: 'Text Mode', icon: Type },
+  { href: '/game', label: 'Game', icon: Swords },
 ];
 
 export function Navbar() {

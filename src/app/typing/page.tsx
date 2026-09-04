@@ -785,8 +785,8 @@ export default function TypingPage() {
             className={`typing-word relative inline ${
               isPastSpace
                 ? isCorrectSpace
-                  ? 'text-emerald-500/80 font-semibold'
-                  : 'bg-red-500/20 text-red-500 font-semibold rounded-xs'
+                  ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                  : 'text-red-600 dark:text-red-400 font-semibold'
                 : ''
             }`}
           >
@@ -817,7 +817,7 @@ export default function TypingPage() {
               className={
                 isCharCorrect
                   ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-                  : 'bg-red-500/25 text-red-600 dark:text-red-400 font-bold rounded-xs px-[0.5px]'
+                  : 'text-red-600 dark:text-red-400 font-bold'
               }
             >
               {char}
@@ -828,14 +828,14 @@ export default function TypingPage() {
         return (
           <span
             key={wordIndex}
-            className="typing-word typing-word-active inline-block relative bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] font-semibold rounded px-1"
+            className="typing-word typing-word-active inline-block relative text-[hsl(var(--foreground))]"
           >
             <span>{renderedTypedChars}</span>
             <span
               className="inline-block bg-[hsl(var(--primary))] animate-pulse rounded-full align-middle mx-[0.5px]"
               style={{ width: '2.5px', height: '1.2em' }}
             />
-            <span className="opacity-70">{untypedPart}</span>
+            <span className="text-[hsl(var(--foreground))]">{untypedPart}</span>
           </span>
         );
       }
@@ -848,10 +848,10 @@ export default function TypingPage() {
         return (
           <span
             key={wordIndex}
-            className={`typing-word inline-block font-semibold px-1 rounded transition-colors ${
+            className={`typing-word inline-block font-semibold transition-colors ${
               isWordCorrect
-                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                : 'text-red-600 dark:text-red-400 bg-red-500/15 line-through decoration-red-500'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-red-600 dark:text-red-400 line-through decoration-red-500'
             }`}
           >
             {word}
